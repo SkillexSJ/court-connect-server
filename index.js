@@ -19,7 +19,7 @@ const stripe = require("stripe")(stripeKey);
 // --------------------------
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://court-connect-cc.netlify.app",
     credentials: true,
   })
 );
