@@ -19,7 +19,7 @@ const stripe = require("stripe")(stripeKey);
 // --------------------------
 app.use(
   cors({
-    origin: "https://court-connect-cc.netlify.app",
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -495,38 +495,54 @@ async function connectDB() {
     }
   );
 
-  app.get(
-    "/users/:email",
-    verifyFirebaseToken,
-    verifyAdmin,
-    async (req, res) => {
-      const { email } = req.params;
-      try {
-        const user = await usersCollection.findOne({ email });
-        if (!user) {
-          return res.status(404).send({ message: "User not found" });
-        }
-        res.send(user);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        res.status(500).send({ message: "Failed to fetch user" });
-      }
-    }
-  );
+  // app.get(
+  //   "/users/:email",
+  //   verifyFirebaseToken,
+  //   verifyAdmin,
+  //   async (req, res) => {
+  //     const { email } = req.params;
+  //     try {
+  //       const user = await usersCollection.findOne({ email });
+  //       if (!user) {
+  //         return res.status(404).send({ message: "User not found" });
+  //       }
+  //       res.send(user);
+  //     } catch (error) {
+  //       console.error("Error fetching user:", error);
+  //       res.status(500).send({ message: "Failed to fetch user" });
+  //     }
+  //   }
+  // );
   // GET a single user by email
-  app.get("/users/:email", async (req, res) => {
-    const { email } = req.params;
-    try {
-      const user = await usersCollection.findOne({ email });
-      if (!user) {
-        return res.status(404).send({ message: "User not found" });
-      }
-      res.send(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).send({ message: "Failed to fetch user" });
+ app.get("/users/:email", verifyFirebaseToken, async (req, res) => {
+  try {
+    const requestedEmail = req.params.email;
+    const requesterEmail = req.decoded.email;
+
+    // Fetch requester user info to check role
+    const requesterUser = await usersCollection.findOne({ email: requesterEmail });
+
+    if (!requesterUser) {
+      return res.status(401).send({ message: "Unauthorized" });
     }
-  });
+
+    // Allow if requester is admin OR requester is asking their own data
+    if (requesterUser.role !== "admin" && requesterEmail !== requestedEmail) {
+      return res.status(403).send({ message: "Forbidden: Access denied" });
+    }
+
+    const user = await usersCollection.findOne({ email: requestedEmail });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    res.send(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).send({ message: "Failed to fetch user" });
+  }
+});
 
   // --------------------------
   // COUPONS CRUD
@@ -874,9 +890,9 @@ async function connectDB() {
   // --------------------------
   // Start Server
   // --------------------------
-  app.listen(port, () => {
-    console.log(`🚀 Server running at http://localhost:${port}`);
-  });
+  // app.listen(port, () => {
+  //   console.log(`🚀 Server running at http://localhost:${port}`);
+  // });
 }
 
 connectDB();
