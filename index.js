@@ -874,9 +874,9 @@ async function connectDB() {
   // --------------------------
   // Start Server
   // --------------------------
-  // app.listen(port, () => {
-  //   console.log(`🚀 Server running at http://localhost:${port}`);
-  // });
+  app.listen(port, () => {
+    console.log(`🚀 Server running at http://localhost:${port}`);
+  });
 }
 
 connectDB();
